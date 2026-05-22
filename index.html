@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book a Meeting</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f4f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    color: #1a1a1a;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 24px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 780px;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    overflow: hidden;
+    min-height: 520px;
+  }
+  @media (max-width: 620px) {
+    .card { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid #eee; }
+  }
+  .sidebar {
+    padding: 2rem 1.5rem;
+    background: #faf9f6;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #dbeafe; color: #1d4ed8;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 600;
+  }
+  .sidebar h2 { font-size: 18px; font-weight: 600; }
+  .sidebar p { font-size: 14px; color: #666; line-height: 1.55; }
+  .section-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .dur-btns { display: flex; gap: 8px; }
+  .dur-btn {
+    border: 1px solid #ddd; background: #fff; border-radius: 8px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; color: #333;
+    transition: all 0.12s;
+  }
+  .dur-btn.active { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; font-weight: 500; }
+  .dur-btn:hover:not(.active) { background: #f5f5f5; }
+  .meta { display: flex; flex-direction: column; gap: 8px; }
+  .meta-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; }
+  .meta-row i { font-size: 15px; color: #999; }
+  .main { padding: 1.75rem 2rem; display: flex; flex-direction: column; }
+  .step { display: none; flex-direction: column; gap: 1rem; height: 100%; }
+  .step.active { display: flex; }
+  .step-title { font-size: 15px; font-weight: 600; color: #111; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; }
+  .cal-nav {
+    width: 32px; height: 32px; border: 1px solid #e5e5e5;
+    background: none; border-radius: 8px; cursor: pointer; color: #555;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    transition: background 0.1s;
+  }
+  .cal-nav:hover { background: #f5f5f5; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-label { font-size: 11px; color: #aaa; text-align: center; padding-bottom: 4px; font-weight: 500; }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 8px; border: none; background: none;
+    font-size: 13px; cursor: pointer; color: #222; transition: all 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-day:hover:not(:disabled) { background: #f0f0f0; }
+  .cal-day.selected { background: #1d4ed8; color: #fff; font-weight: 600; }
+  .cal-day.today { font-weight: 700; border: 1.5px solid #93c5fd; }
+  .cal-day:disabled { color: #ccc; cursor: not-allowed; }
+  .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; overflow-y: auto; max-height: 300px; padding-right: 2px; }
+  .slot-btn {
+    border: 1px solid #e0e0e0; background: #fff; border-radius: 8px;
+    padding: 10px 6px; font-size: 13px; cursor: pointer; color: #222;
+    text-align: center; transition: all 0.1s;
+  }
+  .slot-btn:hover { background: #f5f5f5; border-color: #bbb; }
+  .slot-btn.selected { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; font-weight: 600; }
+  .slot-btn:disabled { color: #ccc; cursor: not-allowed; text-decoration: line-through; background: #fafafa; }
+  .summary-box {
+    background: #f9f9f7; border-radius: 10px; border: 1px solid #eee;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .summary-row { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #555; }
+  .summary-row i { font-size: 15px; color: #999; }
+  .summary-row span { color: #111; font-weight: 500; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-field label { font-size: 13px; color: #666; font-weight: 500; }
+  .form-field input, .form-field textarea {
+    border: 1px solid #ddd; border-radius: 8px;
+    padding: 9px 12px; font-size: 14px; background: #fff;
+    color: #111; font-family: inherit; width: 100%;
+    transition: border-color 0.15s;
+  }
+  .form-field input:focus, .form-field textarea:focus { outline: none; border-color: #93c5fd; }
+  .form-field textarea { resize: none; height: 76px; }
+  .btn-primary {
+    background: #1d4ed8; color: #fff; border: none; border-radius: 8px;
+    padding: 11px 22px; font-size: 14px; cursor: pointer; font-weight: 600;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+  .btn-back {
+    background: none; border: 1px solid #e5e5e5; border-radius: 8px;
+    padding: 7px 14px; font-size: 13px; cursor: pointer; color: #666;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-back:hover { background: #f5f5f5; }
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid #ddd; border-top-color: #1d4ed8;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .success-circle {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: #dcfce7; color: #16a34a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin: 0 auto 1rem;
+  }
+  .error-msg { font-size: 13px; color: #dc2626; }
+  .empty-msg { font-size: 14px; color: #999; text-align: center; padding: 2rem; grid-column: 1 / -1; }
+  .tz-badge {
+    font-size: 11px; background: #f0f0f0; color: #666;
+    border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="avatar">Y</div>
+    <div>
+      <h2>Book a meeting</h2>
+      <p style="margin-top:6px">Pick a time that works for you. I'll send a calendar invite with a video link.</p>
+    </div>
+    <div>
+      <p class="section-label">Duration</p>
+      <div class="dur-btns">
+        <button class="dur-btn active" onclick="setDuration(15, this)">15 min</button>
+        <button class="dur-btn" onclick="setDuration(30, this)">30 min</button>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="meta-row"><i class="ti ti-video"></i> Google Meet</div>
+      <div class="meta-row"><i class="ti ti-clock"></i> <span id="dur-label">15 minutes</span></div>
+      <div class="meta-row"><i class="ti ti-calendar"></i> Mon–Fri, 9 AM – 5 PM</div>
+      <div class="meta-row"><i class="ti ti-map-pin"></i> <span class="tz-badge"><i class="ti ti-globe" style="font-size:12px"></i> Pacific Time (PT)</span></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Step: Date -->
+    <div class="step active" id="step-date">
+      <p class="step-title">Select a date</p>
+      <div class="cal-header">
+        <button class="cal-nav" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span id="month-label" style="font-size:15px; font-weight:600;"></span>
+        <button class="cal-nav" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="cal-grid" id="cal-labels"></div>
+      <div class="cal-grid" id="cal-days"></div>
+    </div>
+
+    <!-- Step: Time -->
+    <div class="step" id="step-time">
+      <div style="display:flex; align-items:center; gap:10px">
+        <button class="btn-back" onclick="goStep('date')"><i class="ti ti-arrow-left" style="font-size:14px"></i> Back</button>
+        <p class="step-title" id="time-header">Available times</p>
+      </div>
+      <div id="slots-loading" style="display:none; align-items:center; gap:8px; font-size:14px; color:#888; padding:8px 0">
+        <div class="spinner"></div> Checking calendar…
+      </div>
+      <div class="slots-grid" id="slots-grid"></div>
+    </div>
+
+    <!-- Step: Details -->
+    <div class="step" id="step-details">
+      <div style="display:flex; align-items:center; gap:10px">
+        <button class="btn-back" onclick="goStep('time')"><i class="ti ti-arrow-left" style="font-size:14px"></i> Back</button>
+        <p class="step-title">Your details</p>
+      </div>
+      <div class="summary-box">
+        <div class="summary-row"><i class="ti ti-clock"></i><span id="confirm-time"></span></div>
+        <div class="summary-row"><i class="ti ti-hourglass"></i><span id="confirm-dur"></span></div>
+        <div class="summary-row"><i class="ti ti-map-pin"></i><span>Pacific Time (PT)</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="form-field"><label>Name *</label><input type="text" id="guest-name" placeholder="Your full name"></div>
+        <div class="form-field"><label>Email *</label><input type="email" id="guest-email" placeholder="you@example.com"></div>
+        <div class="form-field"><label>Notes (optional)</label><textarea id="guest-notes" placeholder="Anything to share before our call?"></textarea></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+        <button class="btn-primary" id="book-btn" onclick="bookMeeting()">Confirm booking</button>
+        <span id="book-spinner" style="display:none"><div class="spinner"></div></span>
+        <span class="error-msg" id="book-error" style="display:none"></span>
+      </div>
+    </div>
+
+    <!-- Step: Confirmed -->
+    <div class="step" id="step-confirm">
+      <div style="text-align:center; padding:2rem 0; margin:auto 0">
+        <div class="success-circle"><i class="ti ti-check"></i></div>
+        <h2 style="font-size:20px; font-weight:700; margin-bottom:8px">You're booked!</h2>
+        <p style="font-size:14px; color:#666; margin-bottom:1.5rem">A Google Calendar invite has been sent to your email.</p>
+        <div class="summary-box" style="max-width:340px; margin:0 auto 1.5rem; text-align:left">
+          <div class="summary-row"><i class="ti ti-calendar"></i><span id="final-date"></span></div>
+          <div class="summary-row"><i class="ti ti-clock"></i><span id="final-time"></span></div>
+          <div class="summary-row"><i class="ti ti-hourglass"></i><span id="final-dur"></span></div>
+          <div class="summary-row"><i class="ti ti-map-pin"></i><span>Pacific Time (PT)</span></div>
+        </div>
+        <button class="btn-primary" onclick="resetBooking()">Book another time</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────
+const ANTHROPIC_API_KEY = 'YOUR_API_KEY_HERE'; // Replace with your key
+const TZ = 'America/Los_Angeles';
+const WORK_START = 9;  // 9 AM PT
+const WORK_END   = 17; // 5 PM PT
+
+// ── State ────────────────────────────────────────────────
+let duration = 15;
+let selectedDate = null;
+let selectedSlot = null;
+let currentMonth = new Date();
+currentMonth.setDate(1);
+
+// ── Helpers ──────────────────────────────────────────────
+const pad = n => String(n).padStart(2,'0');
+const toMins = t => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+
+function nowPT() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
+}
+
+function formatTime(t) {
+  const [h, m] = t.split(':').map(Number);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  const hr = h % 12 || 12;
+  return `${hr}:${pad(m)} ${ap}`;
+}
+
+function dateLabel(date) {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+}
+
+function dateShort(date) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+// ── Navigation ───────────────────────────────────────────
+function goStep(name) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-' + name).classList.add('active');
+}
+
+function setDuration(min, btn) {
+  duration = min;
+  document.getElementById('dur-label').textContent = min + ' minutes';
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (selectedDate) loadSlots(selectedDate);
+}
+
+// ── Calendar ─────────────────────────────────────────────
+function changeMonth(dir) {
+  currentMonth.setMonth(currentMonth.getMonth() + dir);
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const now = nowPT();
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('month-label').textContent = `${months[month]} ${year}`;
+
+  // Day labels
+  const labels = document.getElementById('cal-labels');
+  labels.innerHTML = '';
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-label';
+    el.textContent = d;
+    labels.appendChild(el);
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const grid = document.getElementById('cal-days');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dow = date.getDay();
+    const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
+    const isPast = dateStr < todayStr;
+    const isWeekend = dow === 0 || dow === 6;
+    const isToday = dateStr === todayStr;
+    const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+
+    const btn = document.createElement('button');
+    btn.className = 'cal-day';
+    btn.textContent = d;
+    if (isToday) btn.classList.add('today');
+    if (isSelected) btn.classList.add('selected');
+    if (isPast || isWeekend) {
+      btn.disabled = true;
+    } else {
+      btn.onclick = () => selectDate(new Date(year, month, d));
+    }
+    grid.appendChild(btn);
+  }
+}
+
+function selectDate(date) {
+  selectedDate = date;
+  selectedSlot = null;
+  renderCalendar();
+  document.getElementById('time-header').textContent = dateLabel(date);
+  goStep('time');
+  loadSlots(date);
+}
+
+// ── Slot generation ──────────────────────────────────────
+function generateSlots() {
+  const slots = [];
+  for (let h = WORK_START; h < WORK_END; h++) {
+    for (let m = 0; m < 60; m += duration) {
+      const endTotalMin = h * 60 + m + duration;
+      if (endTotalMin > WORK_END * 60) continue;
+      const endH = Math.floor(endTotalMin / 60);
+      const endM = endTotalMin % 60;
+      slots.push({ start: `${pad(h)}:${pad(m)}`, end: `${pad(endH)}:${pad(endM)}` });
+    }
+  }
+  return slots;
+}
+
+// ── Load slots from Google Calendar ──────────────────────
+async function loadSlots(date) {
+  const grid = document.getElementById('slots-grid');
+  const loading = document.getElementById('slots-loading');
+  grid.innerHTML = '';
+  loading.style.display = 'flex';
+
+  const allSlots = generateSlots();
+  const dateISO = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+
+  let busy = [];
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: 'You are a scheduling assistant. Use Google Calendar to list events for the given date. Return ONLY a JSON array of busy time ranges in Pacific Time: [{"start":"HH:MM","end":"HH:MM"}]. 24-hour format. No preamble, no markdown.',
+        messages: [{ role: 'user', content: `List busy times on ${dateISO} from my Google Calendar. Return only JSON array.` }],
+        mcp_servers: [{ type: 'url', url: 'https://calendarmcp.googleapis.com/mcp/v1', name: 'google-calendar' }]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    busy = JSON.parse(text.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    busy = [];
+  }
+
+  loading.style.display = 'none';
+  renderSlots(allSlots, busy, date);
+}
+
+function renderSlots(slots, busy, date) {
+  const grid = document.getElementById('slots-grid');
+  grid.innerHTML = '';
+  const nowPt = nowPT();
+
+  slots.forEach(slot => {
+    const isToday = date.toDateString() === nowPt.toDateString();
+    const slotMins = toMins(slot.start);
+    const nowMins = nowPt.getHours() * 60 + nowPt.getMinutes();
+    const isPast = isToday && slotMins <= nowMins;
+
+    const isBusy = busy.some(b => {
+      const bs = toMins(b.start), be = toMins(b.end);
+      const ss = toMins(slot.start), se = toMins(slot.end);
+      return ss < be && se > bs;
+    });
+
+    const btn = document.createElement('button');
+    btn.className = 'slot-btn';
+    btn.textContent = formatTime(slot.start);
+    btn.disabled = isBusy || isPast;
+    if (!btn.disabled) {
+      btn.onclick = () => {
+        document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectSlot(slot);
+      };
+    }
+    grid.appendChild(btn);
+  });
+
+  if (!grid.children.length) {
+    grid.innerHTML = '<p class="empty-msg">No available slots for this day.</p>';
+  }
+}
+
+function selectSlot(slot) {
+  selectedSlot = slot;
+  const timeStr = `${dateLabel(selectedDate)} · ${formatTime(slot.start)} – ${formatTime(slot.end)} PT`;
+  document.getElementById('confirm-time').textContent = timeStr;
+  document.getElementById('confirm-dur').textContent = `${duration}-minute call`;
+  goStep('details');
+}
+
+// ── Book meeting ─────────────────────────────────────────
+async function bookMeeting() {
+  const name  = document.getElementById('guest-name').value.trim();
+  const email = document.getElementById('guest-email').value.trim();
+  const notes = document.getElementById('guest-notes').value.trim();
+  const errEl = document.getElementById('book-error');
+  errEl.style.display = 'none';
+
+  if (!name)             { errEl.textContent = 'Please enter your name.';            errEl.style.display = 'inline'; return; }
+  if (!email)            { errEl.textContent = 'Please enter your email.';           errEl.style.display = 'inline'; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.';     errEl.style.display = 'inline'; return; }
+
+  document.getElementById('book-btn').disabled = true;
+  document.getElementById('book-spinner').style.display = 'inline-block';
+
+  const dateISO = `${selectedDate.getFullYear()}-${pad(selectedDate.getMonth()+1)}-${pad(selectedDate.getDate())}`;
+  const startISO = `${dateISO}T${selectedSlot.start}:00`;
+  const endISO   = `${dateISO}T${selectedSlot.end}:00`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: 'You are a calendar booking assistant. Create a Google Calendar event as described. After creating it, return ONLY a JSON object: {"success":true} or {"success":false,"error":"reason"}.',
+        messages: [{ role: 'user', content:
+          `Create a Google Calendar event:\nTitle: Meeting with ${name}\nStart: ${startISO} (Pacific Time)\nEnd: ${endISO} (Pacific Time)\nAttendee: ${email}\nDescription: ${notes || 'Scheduled via booking page.'}\nAdd a Google Meet conference link.`
+        }],
+        mcp_servers: [{ type: 'url', url: 'https://calendarmcp.googleapis.com/mcp/v1', name: 'google-calendar' }]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    let result = { success: true };
+    try { result = JSON.parse(text.replace(/```json|```/g, '').trim()); } catch(e) {}
+
+    if (result.success === false) throw new Error(result.error || 'Booking failed');
+
+    document.getElementById('final-date').textContent = dateShort(selectedDate);
+    document.getElementById('final-time').textContent = `${formatTime(selectedSlot.start)} – ${formatTime(selectedSlot.end)} PT`;
+    document.getElementById('final-dur').textContent = `${duration}-minute call`;
+    goStep('confirm');
+  } catch(e) {
+    errEl.textContent = 'Booking failed. Please try again.';
+    errEl.style.display = 'inline';
+  }
+
+  document.getElementById('book-btn').disabled = false;
+  document.getElementById('book-spinner').style.display = 'none';
+}
+
+function resetBooking() {
+  selectedDate = null;
+  selectedSlot = null;
+  ['guest-name','guest-email','guest-notes'].forEach(id => document.getElementById(id).value = '');
+  renderCalendar();
+  goStep('date');
+}
+
+// ── Init ─────────────────────────────────────────────────
+renderCalendar();
+</script>
+</body>
+</html>
